@@ -61,31 +61,31 @@ exports.login = async (req, res) => {
   try {
     const { email, password, expectedRole } = req.body;
 
+//check if email and password are provided
     if (!email || !password) {
       return res.status(400).json(errorResponse('Email and password are required.', 400));
     }
-
+//check if user exists
     const user = await userModel.findOne({ email }).populate('favourites');
     if (!user) {
       return res.status(404).json({ message: 'User not found.' });
     }
-
+//check if password is correct
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json(errorResponse('Invalid credentials.', 401));
     }
-
-    // ✋ Role mismatch check
+//check if role is correct
     if (expectedRole && user.role !== expectedRole) {
       return res.status(403).json(errorResponse(`Access denied for role: ${user.role}`, 403));
     }
-
+//generate token
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET || 'your_jwt_secret',
       { expiresIn: '1d' }
     );
-
+//return user data  
     return res.status(200).json(successResponse({
       message: 'Login successful',
       token,
@@ -105,6 +105,7 @@ exports.login = async (req, res) => {
   }
 };
 
+// 1
 exports.validateUserAndSendOtp = async (req, res) => {
   try {
     const { email } = req.body;
@@ -168,7 +169,7 @@ exports.validateUserAndSendOtp = async (req, res) => {
     return res.status(500).json(errorResponse('Server error while processing OTP request.'));
   }
 };
-
+// 3
 exports.resetPasswordWithOtp = async (req, res) => {
   try {
     const { email, otp, newPassword, confirmNewPassword } = req.body;
@@ -192,7 +193,7 @@ exports.resetPasswordWithOtp = async (req, res) => {
       });
     }
 
-    // Check if OTP exists and is not expired
+   //check if otp exists and is not expired
     if (!user.otp || !user.otpExpiry) {
       return res.status(400).json({
         success: false,
@@ -243,7 +244,7 @@ exports.resetPasswordWithOtp = async (req, res) => {
     ));
   }
 };
-
+// 2
 exports.validateOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -303,6 +304,7 @@ exports.validateOtp = async (req, res) => {
   }
 };
 
+// authorization : bearer token
 exports.protect = async (req, res, next) => {
   try {
     // 1. Check if token exists in headers
